@@ -405,7 +405,9 @@ These values are arbitrary values that are compared to the active transaction co
 
 * Output
 
-    jta-activeCount=3
+```
+jta-activeCount=3
+```
 
 The output gives the current active transaction count of your application server.
 
