@@ -700,7 +700,7 @@ app-app1#app1.war.servlet1=4
 
 The output gives the average response time (in milliseconds) of the servlet.
 
-### Screeshots
+### Screenshots
 
 You can find below some screenshots showing a typical JDBC connection pool overload :)
 
