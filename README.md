@@ -16,6 +16,7 @@ A network tool for WebSphere Application Server monitoring, that provides perfor
     * [Starting the agent](#starting-the-agent)
     * [First test] (#first-test)
     * [Running queries](#running-queries)
+    * [Calling the plugin with Nagios] (#calling-the-plugin-with-nagios)
     * [Options](#options)
     * [Screenshots] (#screenshots)
 
@@ -355,10 +356,10 @@ WAS 6.1:
 
 ### Running queries
 
-Once the plugin is running, you can invoke it by using the ```wasagent.sh``` script, or with any command line HTTP client. In the example below, we send a monitoring request to a WebSphere instance running on 'hydre2' host, with a SOAP connector listening on port 18047:
+Once the plugin is running, you can invoke it with any command line HTTP client. In the example below, we send a monitoring request to a WebSphere instance running on 'hydre2' host, with a SOAP connector listening on port 18047:
 
 ```
-./wasagent.sh 'hostname=hydre2&port=18047'
+wget -q -O - 'http://localhost:9090/wasagent/WASAgent' --post-data='hostname=hydre2&port=18047'
 ```
 
 The above command produces the following output:
@@ -372,7 +373,7 @@ The first character (0) is the Nagios check return code. The section after the '
 Let's try to get information about the JVM heap usage by adding jvm=heapUsed,80,90 to the query parameters.
 
 ```
-./wasagent.sh 'hostname=hydre2&port=18047&jvm=heapUsed,90,95'
+wget -q -O - 'http://localhost:9090/wasagent/WASAgent' --post-data='hostname=hydre2&port=18047&jvm=heapUsed,90,95'
 ```
 
 The two numerical values at the end are the warning and critical thresholds for the memory usage, we will get back on this later.
@@ -388,7 +389,7 @@ As you can see, we get the current heap size, the maximum heap size, the amount 
 Let's try to change the warning threshold value to '10':
 
 ```
-./wasagent.sh 'hostname=hydre2&port=18047&jvm=heapUsed,10,95'
+wget -q -O - 'http://localhost:9090/wasagent/WASAgent' --post-data='hostname=hydre2&port=18047&jvm=heapUsed,10,95'
 ```
 
 We get this:
@@ -402,7 +403,7 @@ A warning alert is raised by the test, as the ratio used memory / maximum memory
 You can group as many options as you want in the same request:
 
 ```
-./wasagent.sh 'hostname=hydre2&port=18047&jvm=heapUsed,10,90&thread-pool=Default,90,95|ORB.thread.pool,90,95'
+wget -q -O - 'http://localhost:9090/wasagent/WASAgent' --post-data='hostname=hydre2&port=18047&jvm=heapUsed,10,90&thread-pool=Default,90,95|ORB.thread.pool,90,95'
 ```
 
 This way you get different metrics with a single test only:
@@ -416,6 +417,37 @@ If you also change the warning threshold to '10' for the Default thread pool, th
 ```
 1|h2srv1: status WARNING - memory used (94/512) - thread pool active count: Default (3/20)|jvm-heapSize=279MB;;;0;512 jvm-heapUsed=94MB;;;0;512 jvm-cpu=0%;;;0;100 pool-Default-size=7;;;0;20 pool-Default-activeCount=3;;;0;20 pool-ORB.thread.pool-size=0;;;0;50 pool-ORB.thread.pool-activeCount=0;;;0;50
 ```
+
+### Calling the plugin with Nagios
+
+The simplest approach is to use a script similar to the ```wasagent.sh``` one, detailed below:
+
+```bash
+#!/bin/bash
+
+HOST="127.0.0.1"
+CONNECTOR="9090"
+
+DATA=$(wget -q -O - http://${HOST}:${CONNECTOR}/wasagent/WasAgent --post-data=$@ 2> /dev/null)
+
+[ $? != 0 ] && exit 2
+echo ${DATA} | awk -F\| '{ print $2"|"$3  ; exit $1 }'
+exit $?
+```
+
+The previous script takes the POST request parameters as arguments. You can use it like this:
+
+```
+./wasagent.sh 'hostname=hydre2&port=18047&jvm=heapUsed,95,98&thread-pool=Default,90,95|WebContainer,90,95'
+```
+
+The output would look like the following:
+
+```
+h2srv1: status OK|jvm-heapSize=160MB;;;0;256 jvm-heapUsed=64MB;;;0;256 jvm-cpu=0%;;;0;100 pool-Default-size=4;;;0;20 pool-Default-activeCount=2;;;0;20 pool-WebContainer-size=0;;;0;50 pool-WebContainer-activeCount=0;;;0;50
+```
+
+...and the script exit value would be 0 in this case.
 
 ### Options
 
