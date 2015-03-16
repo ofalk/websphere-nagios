@@ -235,7 +235,9 @@ Installing WAS Agent
 
 Clone the project repository:
 
-    git clone https://github.com/yannlambret/websphere-nagios.git
+```
+git clone https://github.com/yannlambret/websphere-nagios.git
+```
 
 The two directories we are interested in are 'src' and 'lib'. Copy the WebSphere admin client jar in the lib directory. You can find the required file in the 'runtimes' directory of your product installation.
 
@@ -314,7 +316,9 @@ Using WAS Agent
 
 Amend the 'run.sh' script to set the path of your JRE installation, and type:
 
-    ./run.sh
+```
+./run.sh
+```
 
 This script is provided for testing purpose only, so you will have to write your own init script.
 
@@ -322,11 +326,15 @@ This script is provided for testing purpose only, so you will have to write your
 
 Assuming that you want to monitor a WAS instance running on a host called 'hydre2' and listening on its default SOAP connector (8880), run the provided script as follows:
 
-    ./wasagent.sh 'hostname=hydre2&port=8880&jvm=heapUsed,90,95'
+```
+./wasagent.sh 'hostname=hydre2&port=8880&jvm=heapUsed,90,95'
+```
 
 You should get something like:
 
-    h2srv1: status OK|jvm-heapSize=278MB;;;0;512 jvm-heapUsed=133MB;;;0;512 jvm-cpu=0%;;;0;100
+```
+h2srv1: status OK|jvm-heapSize=278MB;;;0;512 jvm-heapUsed=133MB;;;0;512 jvm-cpu=0%;;;0;100
+```
 
 If the plugin is not able to connect to the target server, you can kill the plugin process, then add the following jars to the lib directory:
 
@@ -347,10 +355,10 @@ WAS 6.1:
 
 ### Running queries
 
-Once the plugin is running, you can invoke it for instance with wget. In the example below, we send a monitoring request to a WebSphere instance running on 'hydre2' host, with a SOAP connector listening on port 18047:
+Once the plugin is running, you can invoke it by using the ```wasagent.sh``` script, or with any command line HTTP client. In the example below, we send a monitoring request to a WebSphere instance running on 'hydre2' host, with a SOAP connector listening on port 18047:
 
 ```
-wget -q -O - 'http://localhost:9090/wasagent/WASAgent?hostname=hydre2&port=18047'
+./wasagent.sh 'hostname=hydre2&port=18047'
 ```
 
 The above command produces the following output:
@@ -361,10 +369,10 @@ The above command produces the following output:
 
 The first character (0) is the Nagios check return code. The section after the '|' gives the WebSphere instance name, and the global status of the instance based on the performance tests. In this case, no test has been made so the status is 'OK' (return code 0).
 
-Let's try to get information about the JVM heap usage by adding jvm=heapUsed,80,90 to the request parameters. From now on, we will be using POST requests:
+Let's try to get information about the JVM heap usage by adding jvm=heapUsed,80,90 to the query parameters.
 
 ```
-wget -q -O - 'http://localhost:9090/wasagent/WASAgent' --post-data='hostname=hydre2&port=18047&jvm=heapUsed,90,95'
+./wasagent.sh 'hostname=hydre2&port=18047&jvm=heapUsed,90,95'
 ```
 
 The two numerical values at the end are the warning and critical thresholds for the memory usage, we will get back on this later.
@@ -380,7 +388,7 @@ As you can see, we get the current heap size, the maximum heap size, the amount 
 Let's try to change the warning threshold value to '10':
 
 ```
-wget -q -O - 'http://localhost:9090/wasagent/WASAgent' --post-data='hostname=hydre2&port=18047&jvm=heapUsed,10,95'
+./wasagent.sh 'hostname=hydre2&port=18047&jvm=heapUsed,10,95'
 ```
 
 We get this:
@@ -394,7 +402,7 @@ A warning alert is raised by the test, as the ratio used memory / maximum memory
 You can group as many options as you want in the same request:
 
 ```
-wget -q -O - 'http://localhost:9090/wasagent/WASAgent' --post-data='hostname=hydre2&port=18047&jvm=heapUsed,10,90&thread-pool=Default,90,95|ORB.thread.pool,90,95'
+./wasagent.sh 'hostname=hydre2&port=18047&jvm=heapUsed,10,90&thread-pool=Default,90,95|ORB.thread.pool,90,95'
 ```
 
 This way you get different metrics with a single test only:
