@@ -1,8 +1,7 @@
 WAS Agent
 =========
 
-A network tool for WebSphere Application Server monitoring, that provides performance statistics in a suitable format
-for [Nagios][nagios].
+A network tool for WebSphere Application Server monitoring, that provides performance statistics in a suitable format for [Nagios][nagios].
 
 * [Features](#features)
 * [Concepts](#concepts)
@@ -36,9 +35,7 @@ Current features are:
 Concepts
 --------
 
-WAS Agent relies on the use of WebSphere Performance Monitoring infrastructure (PMI), as well as the regular
-JMX API. The agent embedds a small Jetty container, and the monitoring itself is made through simple HTTP requests.
-This approach allows short response times for monitoring queries, and a very low resource consumption.
+WAS Agent relies on the use of WebSphere Performance Monitoring infrastructure (PMI), as well as the regular JMX API. The agent embedds a small Jetty container, and the monitoring itself is made through simple HTTP requests. This approach allows short response times for monitoring queries, and a very low resource consumption.
 
 Prerequisites
 -------------
@@ -70,8 +67,7 @@ For WAS 7.0 and WAS 8.x only, you can also enable this one:
 
     Thread Pools.ConcurrentHungThreadCount
 
-You can find below a sample Jython script to set the appropriate configuration with wsadmin.
-It works with WAS 6.1, 7.0 and 8.x:
+You can find below a sample Jython script to set the appropriate configuration with wsadmin. It works with WAS 6.1, 7.0 and 8.x:
 
 ```python
 # wasagent PMI settings script
@@ -239,8 +235,7 @@ Clone the project repository:
 
     git clone https://github.com/yannlambret/websphere-nagios.git
 
-The two directories we are interested in are 'src' and 'lib'. First things first, copy the WebSphere admin client jar
-in the lib directory. You can find the required file in the 'runtimes' directory of your product installation.
+The two directories we are interested in are 'src' and 'lib'. First things first, copy the WebSphere admin client jar in the lib directory. You can find the required file in the 'runtimes' directory of your product installation.
 
 WAS 8.0:
 
@@ -258,8 +253,7 @@ You can use Apache Ant and the provided 'build.xml' file to build the plugin.
 
 ### Installation
 
-For WAS 7.0 and WAS 8.x, you need one instance of the agent per cell, which you will typically deploy on the dmgr host.
-For WAS 6.1, you need one instance of the agent per node.
+For WAS 7.0 and WAS 8.x, you need one instance of the agent per cell, which you will typically deploy on the dmgr host. For WAS 6.1, you need one instance of the agent per node.
 
 Assuming you are using a root directory named 'wasagent', the layout will be as follows:
 
@@ -276,8 +270,7 @@ Just copy appropriate files and directories from the repository into the 'wasage
 
 ### Configuration
 
-The 'websphere.properties' file contains the basic informations used to connect to a WebSphere Application Server.
-You have to set the contents of this file according to your environment.
+The 'websphere.properties' file contains the basic informations used to connect to a WebSphere Application Server. You have to set the contents of this file according to your environment.
 
 ```bash
 # WAS Agent properties file
@@ -325,10 +318,7 @@ This script is provided for testing purpose only, so you will have to write your
 
 ### Running queries
 
-We assume that the agent is running and listening on 'hydre1:9090', and we want to monitor a remote WAS instance
-listening on its default SOAP connector (8880).
-
-Let's try this simple query:
+Assuming that you want to monitor a WAS instance running on a host called 'hydre2' and listening on its default SOAP connector (8880), run the provided script as follows:
 
     ./wasagent.sh 'hostname=hydre2&port=8880&jvm=heapUsed,90,95'
 
