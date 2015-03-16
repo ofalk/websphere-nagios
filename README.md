@@ -17,6 +17,7 @@ A network tool for WebSphere Application Server monitoring, that provides perfor
     * [First test] (#first-test)
     * [Running queries](#running-queries)
     * [Options](#options)
+    * [Screenshots] (#screenshots)
 
 Features
 --------
@@ -698,5 +699,17 @@ app-app1#app1.war.servlet1=4
 ```
 
 The output gives the average response time (in milliseconds) of the servlet.
+
+### Screeshots
+
+You can find below some screenshots showing a typical JDBC connection pool overload :)
+
+![Screenshot](resources/image_001.png?raw=true "Heap usage")
+
+![Screenshot](resources/image_002.png?raw=true "Thread pool Default")
+
+![Screenshot](resources/image_003.png?raw=true "Thread pool WebContainer")
+
+![Screenshot](resources/image_004.png?raw=true "Datasource")
 
 [nagios]: http://www.nagios.org/
