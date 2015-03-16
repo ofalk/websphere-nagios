@@ -357,7 +357,7 @@ The SOAP connector of the WAS instance you want to monitor.
 
 #### jvm (optional)
 
-* Invocation
+  * Invocation
 
     jvm=heapUsed,90,95
 
@@ -365,7 +365,7 @@ The SOAP connector of the WAS instance you want to monitor.
 
 These values are compared to the ratio used memory / max memory, i.e. the currently amount of memory used by the application server divided by the JVM heap max size (see below).
 
-* Output
+  * Output
 
 The first part of the output gives the current JVM heap size (256MB in the example above). So it will be greater than or equal to the JVM Xms option value. The heap min size is always set to 0, even if the Xms option is set. The heap max size is equal to the Xmx option value.
 
@@ -375,7 +375,7 @@ The third part of the output gives the JVM CPU usage, expressed as a percentage.
 
 #### thread-pool (optional)
 
-* Invocation
+  * Invocation
 
     thread-pool=<pool 1>,w,c|<pool 2>,w,c|...|<pool N>,w,c
 
@@ -395,7 +395,7 @@ Note that the 'warning' and 'critical' thresholds will be the same for all threa
 
 #### jta (optional)
 
-* Invocation
+  * Invocation
 
     jta=activeCount,15,30
 
@@ -403,17 +403,15 @@ Note that the 'warning' and 'critical' thresholds will be the same for all threa
 
 These values are arbitrary values that are compared to the active transaction count of your application server.
 
-* Output
+  * Output
 
-```
-jta-activeCount=3
-```
+    jta-activeCount=3
 
 The output gives the current active transaction count of your application server.
 
 #### jdbc (optional)
 
-* Invocation
+  * Invocation
 
     jdbc=<datasource 1>,w,c|<datasource 2>,w,c|...|<datasource N>,w,c
 
@@ -431,7 +429,7 @@ You can also call the jdbc test with a wildcard:
 
 Note that the 'warning' and 'critical' thresholds will be the same for all datasources though.
 
-* Output
+  * Output
 
     jdbc-jdbc/h2srv1_ds-size=5;;;0;10 jdbc-jdbc/h2srv1_ds-activeCount=2;;;0;10 jdbc-jdbc/h2srv1_ds-waitingThreadCount=0
 
@@ -443,7 +441,7 @@ The third part of the output gives the current count of threads waiting for a co
     
 #### jms (optional)
 
-* Invocation
+  * Invocation
 
     jms=<connection factory 1>,w,c|<connection factory 2>,w,c|...|<connection factory N>,w,c
 
@@ -459,7 +457,7 @@ You can also call the jms test with a wildcard:
 
 Note that the 'warning' and 'critical' thresholds will be the same for all factories though.
 
-* Output
+  * Output
 
     jms-jms/h2srv1_qcf-size=0;;;0;150 jms-jms/h2srv1_qcf-activeCount=0;;;0;150 jms-jms/h2srv1_qcf-waitingThreadCount=0
 
@@ -495,7 +493,7 @@ The output gives the current depth for each queue specified by the user.
 
 #### application (optional)
 
-* Invocation
+  * Invocation
 
     application=<app 1>,w,c|<app 2>,w,c|...|<app N>,w,c
 
