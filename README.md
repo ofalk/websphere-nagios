@@ -529,29 +529,39 @@ You can solve this issue by using a more recent version of the client (even if i
 
 #### servlet (optional)
 
-  * Invocation
+* Invocation
 
-    servlet=<servlet 1>,w,c|<servlet 2>,w,c|...|<servlet N>,w,c
+```
+servlet=<servlet 1>,w,c|<servlet 2>,w,c|...|<servlet N>,w,c
+```
 
 In this generic example, 'servlet 1' ... 'servlet N' would be servlet names, and 'w' and 'c' would be warning and critical thresholds. The servlet name is based on the logical application name, the web module name and the servlet name:
 
-    <logical application name>#<web module name>.<servlet name>
+```
+<logical application name>#<web module name>.<servlet name>
+```
 
 So you could have for instance:
 
-    servlet=app1#app1.war.servlet1,50,100
+```
+servlet=app1#app1.war.servlet1,50,100
+```
 
 For each application, the servlet service time (in milliseconds) is compared to the specified thresholds.
 
 You can also call the servlet test with a wildcard character:
 
-    servlet=*,50,100
+```
+servlet=*,50,100
+```
 
 Note that the 'warning' and 'critical' thresholds will be the same for all servlets though.
 
-  * Output
+* Output
 
-    app-app1#app1.war.servlet1=4
+```
+app-app1#app1.war.servlet1=4
+```
 
 The output gives the average response time (in milliseconds) of the servlet.
 
