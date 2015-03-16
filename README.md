@@ -14,6 +14,7 @@ A network tool for WebSphere Application Server monitoring, that provides perfor
     * [Configuration](#configuration)
 * [Using WAS Agent](#using-was-agent)
     * [Starting the agent](#starting-the-agent)
+    * [First test] (#first-test)
     * [Running queries](#running-queries)
     * [Options](#options)
 
@@ -235,7 +236,7 @@ Clone the project repository:
 
     git clone https://github.com/yannlambret/websphere-nagios.git
 
-The two directories we are interested in are 'src' and 'lib'. First things first, copy the WebSphere admin client jar in the lib directory. You can find the required file in the 'runtimes' directory of your product installation.
+The two directories we are interested in are 'src' and 'lib'. Copy the WebSphere admin client jar in the lib directory. You can find the required file in the 'runtimes' directory of your product installation.
 
 WAS 8.0:
 
@@ -316,7 +317,7 @@ Amend the 'run.sh' script to set the path of your JRE installation, and type:
 
 This script is provided for testing purpose only, so you will have to write your own init script.
 
-### Running queries
+### First test
 
 Assuming that you want to monitor a WAS instance running on a host called 'hydre2' and listening on its default SOAP connector (8880), run the provided script as follows:
 
@@ -343,6 +344,70 @@ WAS 6.1:
     ${WAS_INSTALL_ROOT}/runtimes/com.ibm.ws.webservices.thinclient_6.1.0.jar
     ${WAS_INSTALL_ROOT}/plugins/com.ibm.ws.security.crypto_6.1.0.jar
 
+### Running queries
+
+Once the plugin is running, you can invoke it for instance with wget. In the example below, we send a monitoring request to a WebSphere instance running on 'hydre2' host, with a SOAP connector listening on port 18047:
+
+```
+wget -q -O - 'http://localhost:9090/wasagent/WASAgent?hostname=hydre2&port=18047'
+```
+
+The above command produces the following output:
+
+```
+0|h2srv1: status OK|
+```
+
+The first character (0) is the Nagios check return code. The section after the '|' gives the WebSphere instance name, and the global status of the instance based on the performance tests. In this case, no test has been made so the status is 'OK' (return code 0).
+
+Let's try to get information about the JVM heap usage by adding jvm=heapUsed,80,90 to the request parameters. From now on, we will be using POST requests:
+
+```
+wget -q -O - 'http://localhost:9090/wasagent/WASAgent' --post-data='hostname=hydre2&port=18047&jvm=heapUsed,90,95'
+```
+
+The two numerical values at the end are the warning and critical thresholds for the memory usage, we will get back on this later.
+
+The command output is:
+
+```
+0|h2srv1: status OK|jvm-heapSize=279MB;;;0;512 jvm-heapUsed=96MB;;;0;512 jvm-cpu=0%;;;0;100
+```
+
+As you can see, we get the current heap size, the maximum heap size, the amount of memory currently used by the server and the JVM CPU usage.
+
+Let's try to change the warning threshold value to '10':
+
+```
+wget -q -O - 'http://localhost:9090/wasagent/WASAgent' --post-data='hostname=hydre2&port=18047&jvm=heapUsed,10,95'
+```
+
+We get this:
+
+```
+1|h2srv1: status WARNING - memory used (100/512)|jvm-heapSize=279MB;;;0;512 jvm-heapUsed=100MB;;;0;512 jvm-cpu=0%;;;0;100
+```
+
+A warning alert is raised by the test, as the ratio used memory / maximum memory is superior to 10% (our warning threshold).
+
+You can group as many options as you want in the same request:
+
+```
+wget -q -O - 'http://localhost:9090/wasagent/WASAgent' --post-data='hostname=hydre2&port=18047&jvm=heapUsed,10,90&thread-pool=Default,90,95|ORB.thread.pool,90,95'
+```
+
+This way you get different metrics with a single test only:
+
+```
+1|h2srv1: status WARNING - memory used (106/512)|jvm-heapSize=279MB;;;0;512 jvm-heapUsed=106MB;;;0;512 jvm-cpu=0%;;;0;100 pool-Default-size=7;;;0;20 pool-Default-activeCount=3;;;0;20 pool-ORB.thread.pool-size=0;;;0;50 pool-ORB.thread.pool-activeCount=0;;;0;50
+```
+
+If you also change the warning threshold to '10' for the Default thread pool, the message output will change to this:
+
+```
+1|h2srv1: status WARNING - memory used (94/512) - thread pool active count: Default (3/20)|jvm-heapSize=279MB;;;0;512 jvm-heapUsed=94MB;;;0;512 jvm-cpu=0%;;;0;100 pool-Default-size=7;;;0;20 pool-Default-activeCount=3;;;0;20 pool-ORB.thread.pool-size=0;;;0;50 pool-ORB.thread.pool-activeCount=0;;;0;50
+```
+
 ### Options
 
 Here is a summary of the available options:
@@ -357,15 +422,22 @@ The SOAP connector of the WAS instance you want to monitor.
 
 #### jvm (optional)
 
-  * Invocation
+* Invocation
 
-    jvm=heapUsed,90,95
+```
+jvm=heapUsed,90,95
+```
 
-90 is the warning threshold for the JVM heap usage. 95 is the critical threshold for the JVM heap usage.
+90 is the warning threshold for the JVM heap usage.
+95 is the critical threshold for the JVM heap usage.
 
 These values are compared to the ratio used memory / max memory, i.e. the currently amount of memory used by the application server divided by the JVM heap max size (see below).
 
-  * Output
+* Output
+
+```
+jvm-heapSize=256MB;;;0;512 jvm-heapUsed=184MB;;;0;512 jvm-cpu=1%;;;0;100
+```
 
 The first part of the output gives the current JVM heap size (256MB in the example above). So it will be greater than or equal to the JVM Xms option value. The heap min size is always set to 0, even if the Xms option is set. The heap max size is equal to the Xmx option value.
 
@@ -375,63 +447,97 @@ The third part of the output gives the JVM CPU usage, expressed as a percentage.
 
 #### thread-pool (optional)
 
-  * Invocation
+* Invocation
 
-    thread-pool=<pool 1>,w,c|<pool 2>,w,c|...|<pool N>,w,c
+```
+thread-pool=<pool 1>,w,c|<pool 2>,w,c|...|<pool N>,w,c
+```
 
 In this generic example, 'pool 1' ... 'pool N' would be pool names, and 'w' and 'c' would be warning and critical thresholds, expressed as percentages.
 
 So you could have for instance:
 
-    thread-pool=WebContainer,80,90|ORB.thread.pool,90,95
+```
+thread-pool=WebContainer,80,90|ORB.thread.pool,90,95
+```
 
 For each pool, the ratio active thread count / max thread count is compared to the specified thresholds.
 
 You can also call the thread-pool test with a wildcard:
 
-    thread-pool=*,90,95
+```
+thread-pool=*,90,95
+```
 
 Note that the 'warning' and 'critical' thresholds will be the same for all thread pools though.
 
+* Output
+
+```
+pool-WebContainer-size=4;;;0;50 pool-WebContainer-activeCount=1;;;0;50 pool-ORB.thread.pool-size=2;;;0;50 pool-ORB.thread.pool-activeCount=1;;;0;50
+```
+
+For each pool, the first part of the output gives the current pool size. The min value is always set to 0, the max value is the max pool size value.
+
+The second part of the ouput gives the current active thread count for the given pool. The min value is always set to 0, the max value is the max pool size value.
+
+If hung thread detection is enabled in PMI and there are some hung threads in the monitored pool, the plugin will raise a warning alert if the number of hung threads exceeds 10% of the total pool capacity, and a critical alert if this number exceeds 20% of the total pool capacity. There will also be an additional metric to graph the hung thread count. You could have for instance:
+
+```
+h2srv1: status WARNING - 'WebContainer' thread pool hung count (5/50)|pool-WebContainer-size=7;;;0;50 pool-WebContainer-activeCount=7;;;0;50 pool-WebContainer-hungCount=5;;;0;50
+```
+
 #### jta (optional)
 
-  * Invocation
+* Invocation
 
-    jta=activeCount,15,30
+```
+jta=activeCount,15,30
+```
 
 15 is the warning threshold for the transaction active count. 30 is the critical threshold for the transaction active count.
 
 These values are arbitrary values that are compared to the active transaction count of your application server.
 
-  * Output
+* Output
 
-    jta-activeCount=3
+```
+jta-activeCount=3
+```
 
 The output gives the current active transaction count of your application server.
 
 #### jdbc (optional)
 
-  * Invocation
+* Invocation
 
-    jdbc=<datasource 1>,w,c|<datasource 2>,w,c|...|<datasource N>,w,c
+```
+jdbc=<datasource 1>,w,c|<datasource 2>,w,c|...|<datasource N>,w,c
+```
 
 In this generic example, 'datasource 1' ... 'datasource N' would be jdbc datasource names, and 'w' and 'c' would be warning and critical thresholds.
 
 So you could have for instance:
 
-    jdbc=jdbc/h2srv1_ds,90,95
+```
+jdbc=jdbc/h2srv1_ds,90,95
+```
 
 For each datasource, the active thread count / max thread count ratio is compared to the specified thresholds.
 
 You can also call the jdbc test with a wildcard:
 
-    jdbc=*,90,95
+```
+jdbc=*,90,95
+```
 
 Note that the 'warning' and 'critical' thresholds will be the same for all datasources though.
 
-  * Output
+* Output
 
-    jdbc-jdbc/h2srv1_ds-size=5;;;0;10 jdbc-jdbc/h2srv1_ds-activeCount=2;;;0;10 jdbc-jdbc/h2srv1_ds-waitingThreadCount=0
+```
+jdbc-jdbc/h2srv1_ds-size=5;;;0;10 jdbc-jdbc/h2srv1_ds-activeCount=2;;;0;10 jdbc-jdbc/h2srv1_ds-waitingThreadCount=0
+```
 
 For each datasource, the first part of the output gives the current connection pool size. The min value is always set to 0, the max value is the max connection pool size value.
 
@@ -441,25 +547,33 @@ The third part of the output gives the current count of threads waiting for a co
     
 #### jms (optional)
 
-  * Invocation
+* Invocation
 
-    jms=<connection factory 1>,w,c|<connection factory 2>,w,c|...|<connection factory N>,w,c
+```
+jms=<connection factory 1>,w,c|<connection factory 2>,w,c|...|<connection factory N>,w,c
+```
 
 In this generic example, 'connection factory 1' ... 'connection factory N' would be connection factories JNDI names, so you could have for instance:
 
-    jms=jms/h2srv1_qcf,90,95
+```
+jms=jms/h2srv1_qcf,90,95
+```
 
 For each connection factory, the active thread count / max thread count ratio is compared to the specified thresholds.
 
 You can also call the jms test with a wildcard:
 
-    jms=*,90,95
+```
+jms=*,90,95
+```
 
 Note that the 'warning' and 'critical' thresholds will be the same for all factories though.
 
-  * Output
+* Output
 
-    jms-jms/h2srv1_qcf-size=0;;;0;150 jms-jms/h2srv1_qcf-activeCount=0;;;0;150 jms-jms/h2srv1_qcf-waitingThreadCount=0
+```
+jms-jms/h2srv1_qcf-size=0;;;0;150 jms-jms/h2srv1_qcf-activeCount=0;;;0;150 jms-jms/h2srv1_qcf-waitingThreadCount=0
+```
 
 For each factory, the first part of the output gives the current pool size. The min value is always set to 0, the max value is the max pool size value.
 
@@ -467,13 +581,17 @@ The second part of the ouput gives the current active thread count for the given
 
 If you are using JMS 1.0 listeners, the plugin will raise an warning alert if some of them are stopped. The output would look like this :
 
-    h2srv1: status WARNING - stopped listeners: 3|jms-jms/h2srv1_qcf-size=0;;;0;150 jms-jms/h2srv1_qcf-activeCount=0;;;0;150 jms-jms/h2srv1_qcf-waitingThreadCount=0
+```
+h2srv1: status WARNING - stopped listeners: 3|jms-jms/h2srv1_qcf-size=0;;;0;150 jms-jms/h2srv1_qcf-activeCount=0;;;0;150 jms-jms/h2srv1_qcf-waitingThreadCount=0
+```
 
 #### sib-queue (optional)
 
-  * Invocation
+* Invocation
 
-    sib-queue=<queue 1>,w,c|<queue 2>,w,c|...|<queue N>,w,c
+```
+sib-queue=<queue 1>,w,c|<queue 2>,w,c|...|<queue N>,w,c
+```
 
 In this generic example, 'queue 1' ... 'queue N' would be queue identifiers, and 'w' and 'c' would be warning and critical thresholds. The queue name is the WebSphere identifier (don't use JNDI name).
 
@@ -481,41 +599,55 @@ For each queue, the current queue depth is compared to the specified thresholds.
 
 You can also call the sib-queue test with a wildcard:
 
-    sib-queue=*,10,20
+```
+sib-queue=*,10,20
+```
 
 Notice the 'warning' and 'critical' thresholds will be the same for all queues though.
 
-  * Output
+* Output
 
-    sib-queue-testQueue=2
+```
+sib-queue-testQueue=2
+```
 
 The output gives the current depth for each queue specified by the user.
 
 #### application (optional)
 
-  * Invocation
+* Invocation
 
-    application=<app 1>,w,c|<app 2>,w,c|...|<app N>,w,c
+```
+application=<app 1>,w,c|<app 2>,w,c|...|<app N>,w,c
+```
 
 In this generic example, 'app 1' ... 'app N' would be web application names, and 'w' and 'c' would be warning and critical thresholds. The web application name is based on the logical application name on one hand, and on the web module name on the other hand:
 
-    <logical application name>#<web module name>
+```
+<logical application name>#<web module name>
+```
 
 So you could have for instance:
 
-    application=app1#app1.war,200,250
+```
+application=app1#app1.war,200,250
+```
 
 For each application, the current active HTTP session count is compared to the specified thresholds.
 
 You can also call the application test with a wildcard character:
 
-    application=*,150,200
+```
+application=*,150,200
+```
 
 Note that the 'warning' and 'critical' thresholds will be the same for all applications though.
 
-  * Output
+* Output
 
-    app-app1#app1.war=11
+```
+app-app1#app1.war=11
+```
 
 The output gives the current active HTTP session count for each application specified by the user.
 
@@ -525,7 +657,9 @@ If you're getting a runtime exception about the missing symbol 'WSSessionManagem
 
 You can solve this issue by using a more recent version of the client (even if it doesn't match the target application server version), or you can checkout the source and modify the ApplicationTest class (line 85) by replacing the constant by its actual value:
 
-    WSStats stats = proxy.getStats("servletSessionsModule");
+```
+WSStats stats = proxy.getStats("servletSessionsModule");
+```
 
 #### servlet (optional)
 
