@@ -4,7 +4,7 @@ cd $(dirname "$0")
 
 JAVA_HOME=""
 JAVA_OPTS="-Dwasagent.host=127.0.0.1 -Dwasagent.port=9090 -Dwasagent.configuration=wasagent.properties"
-CLASSPATH=".:wasagent-r220.jar"
+CLASSPATH=".:wasagent.jar"
 
 for jar in $(find "lib" -name '*.jar'); do
   CLASSPATH=${CLASSPATH}:${jar};
