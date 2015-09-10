@@ -80,13 +80,13 @@ node_name = 'hydre2'
 server_name = 'h2srv1'
 
 # PMI statistics values
-stats = { 'jvmRuntimeModule': '1,3,5',
-          'threadPoolModule': '3,4,8',
-          'transactionModule': '4',
-          'connectionPoolModule': '5,6,7',
-          'j2cModule': '5,6,7',
-          'servletSessionsModule': '7',
-          'webAppModule': '13' }
+stats = {'jvmRuntimeModule': '1,3,5',
+         'threadPoolModule': '3,4,8',
+         'transactionModule': '4',
+         'connectionPoolModule': '5,6,7',
+         'j2cModule': '5,6,7',
+         'servletSessionsModule': '7',
+         'webAppModule': '13'}
 
 # Recursive function to configure the whole PMI subtree
 def set_pmimodules(module, value):
